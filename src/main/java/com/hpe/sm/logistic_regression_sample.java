@@ -141,83 +141,83 @@ public class logistic_regression_sample {
 	}
 	
 
-	public static void main(String[] args) {
-		SparkConf conf = new SparkConf().setAppName("Linear Regression Example").setMaster("local");
-		JavaSparkContext sc = new JavaSparkContext(conf);
-		SQLContext sqlContext = new SQLContext(sc);
-		// INCIDENT_ID OWNER_NAME AFFECTED_ITEM LOGICAL_NAME TITLE SUBCATEGORY
-		// PRODUCT_TYPE DEPT HP_ISSUE_TYPE_ID HP_PROD_SPEC_ID ASSIGNMENT BREACH
-		JavaRDD<Incident> incidents_rdd = sc
-				.textFile("C:\\share\\coursera\\knowledege shareing\\SLA_Predict\\hpit_incident_clean1.txt")
-				.map(new Function<String, Incident>() {
-					public Incident call(String line) throws Exception {
-						String[] parts = line.split("\\t");
-						Incident incident = new Incident();
-						incident.setINCIDENT_ID(parts[0]);
-						incident.setOWNER_NAME(parts[1]);
-						incident.setAFFECTED_ITEM(parts[2]);
-						incident.setLOGICAL_NAME(parts[3]);
-						incident.setTITLE(parts[4]);
-						incident.setSUBCATEGORY(parts[5]);
-						incident.setPRODUCT_TYPE(parts[6]);
-						incident.setDEPT(parts[7]);
-						incident.setHP_ISSUE_TYPE_ID(parts[8]);
-						incident.setHP_PROD_SPEC_ID(parts[9]);
-						incident.setASSIGNMENT(parts[10]);
-						System.out.println(parts[11]);
-						incident.setLabel(Double.parseDouble(parts[11]));
-						return incident;
-					}
-				});
-		
-		DataFrame data = sqlContext.createDataFrame(incidents_rdd, Incident.class);
-		
-		//return new LabeledPoint(Double.parseDouble(parts[0]), Vectors.dense(v));
-		data.registerTempTable("incidents");
-		
-		DataFrame[] splits = data.randomSplit(new double[] {0.9, 0.1}, 12345);
-		DataFrame training = splits[0];
-		DataFrame test = splits[1];
-		
-		//DataFrame teenagers = sqlContext.sql("SELECT name FROM incidents WHERE age >= 13 AND age <= 19");
-	    RegexTokenizer regexTokenizer = new RegexTokenizer()
-	    	      .setInputCol("TITLE")
-	    	      .setOutputCol("words")
-	    	      .setPattern("\\W");  // alternatively .setPattern("\\w+").setGaps(false);
-		/*Tokenizer tokenizer = new Tokenizer()
-				  .setInputCol("TITLE")
-				  .setOutputCol("words");*/
-	    
-	    StopWordsRemover remover = new StopWordsRemover()
-	    		  .setInputCol(regexTokenizer.getOutputCol())
-	    		  .setOutputCol("filtered_words");
-	    
-		HashingTF hashingTF = new HashingTF()
-				  .setNumFeatures(1000)
-				  .setInputCol(remover.getOutputCol())
-				  .setOutputCol("rawFeatures");
-		
-		IDF idf = new IDF()
-				.setInputCol(hashingTF.getOutputCol())
-				.setOutputCol("features");
-				
-		LogisticRegression lr = new LogisticRegression();
-		System.out.println("LogisticRegression parameters:\n" + lr.explainParams() + "\n");
-		
-		lr.setMaxIter(10)
-		  .setRegParam(0.01);
-		
-		Pipeline pipeline = new Pipeline()
-				  .setStages(new PipelineStage[] {regexTokenizer,remover, hashingTF, idf, lr});
-
-		
-		PipelineModel model = pipeline.fit(training);
-		
-		// Make predictions on test documents.
-		DataFrame predictions = model.transform(test);
-		for (Row r: predictions.select("INCIDENT_ID", "TITLE", "filtered_words", "features", "probability", "prediction").take(3)) {
-		  System.out.println("(" + r.get(0) + ", " + r.get(1) + ", " + r.get(2) + ", " + r.get(3) + ") --> prob=" + r.get(4)
-		      + ", prediction=" + r.get(5));
-		}
-	}
+//	public static void main(String[] args) {
+//		SparkConf conf = new SparkConf().setAppName("Linear Regression Example").setMaster("local");
+//		JavaSparkContext sc = new JavaSparkContext(conf);
+//		SQLContext sqlContext = new SQLContext(sc);
+//		// INCIDENT_ID OWNER_NAME AFFECTED_ITEM LOGICAL_NAME TITLE SUBCATEGORY
+//		// PRODUCT_TYPE DEPT HP_ISSUE_TYPE_ID HP_PROD_SPEC_ID ASSIGNMENT BREACH
+//		JavaRDD<Incident> incidents_rdd = sc
+//				.textFile("C:\\share\\coursera\\knowledege shareing\\SLA_Predict\\hpit_incident_clean1.txt")
+//				.map(new Function<String, Incident>() {
+//					public Incident call(String line) throws Exception {
+//						String[] parts = line.split("\\t");
+//						Incident incident = new Incident();
+//						incident.setINCIDENT_ID(parts[0]);
+//						incident.setOWNER_NAME(parts[1]);
+//						incident.setAFFECTED_ITEM(parts[2]);
+//						incident.setLOGICAL_NAME(parts[3]);
+//						incident.setTITLE(parts[4]);
+//						incident.setSUBCATEGORY(parts[5]);
+//						incident.setPRODUCT_TYPE(parts[6]);
+//						incident.setDEPT(parts[7]);
+//						incident.setHP_ISSUE_TYPE_ID(parts[8]);
+//						incident.setHP_PROD_SPEC_ID(parts[9]);
+//						incident.setASSIGNMENT(parts[10]);
+//						System.out.println(parts[11]);
+//						incident.setLabel(Double.parseDouble(parts[11]));
+//						return incident;
+//					}
+//				});
+//		
+//		DataFrame data = sqlContext.createDataFrame(incidents_rdd, Incident.class);
+//		
+//		//return new LabeledPoint(Double.parseDouble(parts[0]), Vectors.dense(v));
+//		data.registerTempTable("incidents");
+//		
+//		DataFrame[] splits = data.randomSplit(new double[] {0.9, 0.1}, 12345);
+//		DataFrame training = splits[0];
+//		DataFrame test = splits[1];
+//		
+//		//DataFrame teenagers = sqlContext.sql("SELECT name FROM incidents WHERE age >= 13 AND age <= 19");
+//	    RegexTokenizer regexTokenizer = new RegexTokenizer()
+//	    	      .setInputCol("TITLE")
+//	    	      .setOutputCol("words")
+//	    	      .setPattern("\\W");  // alternatively .setPattern("\\w+").setGaps(false);
+//		/*Tokenizer tokenizer = new Tokenizer()
+//				  .setInputCol("TITLE")
+//				  .setOutputCol("words");*/
+//	    
+//	    StopWordsRemover remover = new StopWordsRemover()
+//	    		  .setInputCol(regexTokenizer.getOutputCol())
+//	    		  .setOutputCol("filtered_words");
+//	    
+//		HashingTF hashingTF = new HashingTF()
+//				  .setNumFeatures(1000)
+//				  .setInputCol(remover.getOutputCol())
+//				  .setOutputCol("rawFeatures");
+//		
+//		IDF idf = new IDF()
+//				.setInputCol(hashingTF.getOutputCol())
+//				.setOutputCol("features");
+//				
+//		LogisticRegression lr = new LogisticRegression();
+//		System.out.println("LogisticRegression parameters:\n" + lr.explainParams() + "\n");
+//		
+//		lr.setMaxIter(10)
+//		  .setRegParam(0.01);
+//		
+//		Pipeline pipeline = new Pipeline()
+//				  .setStages(new PipelineStage[] {regexTokenizer,remover, hashingTF, idf, lr});
+//
+//		
+//		PipelineModel model = pipeline.fit(training);
+//		
+//		// Make predictions on test documents.
+//		DataFrame predictions = model.transform(test);
+//		for (Row r: predictions.select("INCIDENT_ID", "TITLE", "filtered_words", "features", "probability", "prediction").take(3)) {
+//		  System.out.println("(" + r.get(0) + ", " + r.get(1) + ", " + r.get(2) + ", " + r.get(3) + ") --> prob=" + r.get(4)
+//		      + ", prediction=" + r.get(5));
+//		}
+//	}
 }
