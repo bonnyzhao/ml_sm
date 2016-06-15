@@ -6,7 +6,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Read {
 	private static Connection dbCon = null;
@@ -25,12 +27,12 @@ public class Read {
 				 + ",'AssignGroup ' + [ASSIGN_DEPT] "
 				 + ",'Coordinator ' + [COORD_DEPT]  "
 				 + ",'Risk ' + [RISK_ASSESSMENT]  "
-				 + ",'Priority ' + [PRIORITY_CODE]  "
+				// + ",'Priority ' + [PRIORITY_CODE]  " //always 2
 				 + ",'Gl ' + [GL_NUMBER]  "
 				 + ",'Logical ' + [LOGICAL_NAME] "
 				 + ", 'Service ' + [HP_BIZSRVC_CI_ID]"
 				// + ",'Current ' + [CURRENT_PHASE]  "
-				 + ",'AMOUNT ' + CONVERT(varchar, [amount]) "
+				// + ",'AMOUNT ' + CONVERT(varchar, [amount]) as 'AMOUNT' "
 				 + ",[DESCRIPTION]  "
 				 + "FROM Change_Service_Amount  "
 				 + "where STATUS = 'closed'"
@@ -54,8 +56,10 @@ public class Read {
 		try {
 			List<String> positiveResult = new ArrayList<String>();
 			ResultSet positiveChanges = stmt.executeQuery(changeWithIncident);
+			Map<String, Integer> amountMap = new HashMap<String, Integer>();
 			while(positiveChanges.next()){
 				positiveResult.add(positiveChanges.getString(1));
+				amountMap.put(positiveChanges.getString(1), positiveChanges.getInt(2));
 			}
 			
 			ResultSet changes = stmt.executeQuery(getChange);
@@ -63,6 +67,9 @@ public class Read {
 				Change change = new Change();
 				change.setID(changes.getString("NUMBER"));
 				change.setDescription(changes.getString("DESCRIPTION"));
+				change.setAmount(
+						amountMap.containsKey(change.getID()) ? amountMap.get(change.getID()) : 0);
+				//change.setAmount(Integer.valueOf(changes.getString("AMOUNT").substring(7)));
 				List<String> features = new ArrayList<String>();
 				for(int i = 2; i < 8; ++i){
 					String s = changes.getString(i);

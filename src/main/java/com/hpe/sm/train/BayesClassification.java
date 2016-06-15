@@ -33,9 +33,10 @@ public class BayesClassification {
 		for(Change c : changes){
 			if(Math.random() > trainPercent){
 				testSet.add(c);
-			}else{
-				trainSet.add(c);
 			}
+			//all data is put into trainset
+			trainSet.add(c);
+			if(trainSet.size() > 5000) break;
 		}
 //		int count = 0;
 //		List<Change> balancedTrainSet = new ArrayList<Change>();
@@ -82,12 +83,15 @@ public class BayesClassification {
 		int[] maxEntSta = {0, 0, 0, 0};
 		int[] combineSta = {0, 0, 0, 0};
 		
-		
 		List<Boolean> correctResult = new ArrayList<Boolean>();
 		List<Float> bayesPercentageList = new ArrayList<Float>();
-		List<Float> featuredClassification = new ArrayList<Float>();
 		List<Float> maxEntPercentageList = new ArrayList<Float>();
+		List<Float> neighbourList = new ArrayList<Float>();
+		
 		for(Change c : testSet){
+			double maxEntPercentage = LingPipeTest.test(c);
+			boolean maxEntResult = maxEntPercentage > 0? true : false;
+			
 			boolean bayesResult;// = bayes.classify(c.getFeatures()).getCategory();
 			double bayesPercentage;
 			
@@ -105,20 +109,16 @@ public class BayesClassification {
 			}
 			bayesPercentage = bayesResult? bayesPercentage : bayesPercentage * -1;
 			
-			double featuredPercentage = MaxEntClassification.test(c);
-			boolean featuredResult = bayesPercentage > 0? true : false;
-			
-			double maxEntPercentage = LingPipeTest.test(c);
-			boolean maxEntResult = maxEntPercentage > 0? true : false;
-			
+			//double featuredPercentage = MaxEntClassification.test(c);
+			//boolean featuredResult = bayesPercentage > 0? true : false;
 			
 			correctResult.add(c.getResult());
 			bayesPercentageList.add((float)bayesPercentage);
 			maxEntPercentageList.add((float)maxEntPercentage);
-			featuredClassification.add((float)featuredPercentage);
+			//featuredClassification.add((float)featuredPercentage);
 			
 			boolean combinedResult = //maxEntResult;
-					304.76070242516715 * bayesPercentage + 247.1119867602356 * maxEntPercentage > 0? 
+					1.0839264057606783 * bayesPercentage + 0.2770613798522845 * maxEntPercentage + -0.19389341440327365 > 0? 
 							true : false;
 			
 			if(combinedResult == true && c.getResult() == true) ++combineSta[0];//tp
@@ -136,8 +136,13 @@ public class BayesClassification {
 			if(maxEntResult == true && c.getResult() == false) ++maxEntSta[2];
 			if(maxEntResult == false && c.getResult() == false) ++maxEntSta[3];
 			
-			//System.out.println(bayesPercentage + "\t" + bayesResult + "\t" + maxEntPercentage + "\t" + c.getResult());
-			
+			//considering neighbours
+			Change[] neighbour = findNeighbour(c, 10);
+			float trueCount = 0;
+			for(Change n : neighbour){
+				trueCount += n.getResult()? 1 : 0;
+			}
+			neighbourList.add((trueCount / 10) * 2 - 1);
 		}
 		
 		double accuracy = (double)(combineSta[0] + combineSta[3]) / testSet.size();
@@ -170,6 +175,89 @@ public class BayesClassification {
 		System.out.println("F1: " + 2 * recall * accuracy / (recall + accuracy));
 		System.out.println("tp: " + maxEntSta[0] + "\ttn: " + maxEntSta[3] + "\tfp: " + maxEntSta[2] + "\tfn: " + maxEntSta[1]);
 		
-		//svm_model model = SVMTrain.train(correctResult, bayesPercentageList, maxEntPercentageList, featuredClassification);
+		
+		
+		
+		svm_model model = SVMTrain.train(correctResult, bayesPercentageList, maxEntPercentageList, neighbourList);
+	}
+	
+	public static ChangeImpactResult test(Change change){
+		ChangeImpactResult result = new ChangeImpactResult();
+		
+		double bayesPercentage;
+		boolean bayesResult;
+		Iterator<Classification<String, Boolean>> it = bayes.classifyDetailed(change.getFeatures()).iterator();
+		Classification<String, Boolean> firstPos = (Classification<String, Boolean>)it.next();
+		Classification<String, Boolean> secondPos = (Classification<String, Boolean>)it.next();
+		if(firstPos.getProbability() > secondPos.getProbability()){
+			bayesResult = firstPos.getCategory();
+			bayesPercentage = firstPos.getProbability() / (firstPos.getProbability() + secondPos.getProbability());
+			System.out.println("1st: " + firstPos.getCategory() + "\t" + firstPos.getProbability());
+			System.out.println("2nd: " + secondPos.getCategory() + "\t" + secondPos.getProbability());
+			//bayesPercentage = firstPos.getProbability();
+		}else{
+			bayesResult = secondPos.getCategory();
+			bayesPercentage = secondPos.getProbability() / (firstPos.getProbability() + secondPos.getProbability());
+			System.out.println("1st: " + firstPos.getCategory() + "\t" + firstPos.getProbability());
+			System.out.println("2nd: " + secondPos.getCategory() + "\t" + secondPos.getProbability());
+			//bayesPercentage = secondPos.getProbability();
+		}
+		bayesPercentage = bayesResult? bayesPercentage : bayesPercentage * -1;
+		
+		double maxEntPercentage = LingPipeTest.test(change);
+		
+		double combinedResult = 1.0839264057606783 * bayesPercentage + 0.2770613798522845 * maxEntPercentage + -0.19389341440327365;
+		//double combinedResult = 0.8061453348032956 * bayesPercentage + 0.2626419275940862 * maxEntPercentage + -0.2706269200074364;
+				
+		result.setPossibility((combinedResult + 1) / 2);
+		
+		result.setRelatedChanges(findNeighbour(change, 5));
+		
+		return result;
+	}
+	
+	private static Change[] findNeighbour(Change change, int length){
+		double[] distances = new double[length];
+		Change[] changes = new Change[length];
+		for(int i = 0; i < length; ++i){
+			distances[i] = Double.MAX_VALUE;
+		}
+		for (int i = 0; i < trainSet.size(); ++i) {
+			double d = LingPipeTest.distance(change, trainSet.get(i));
+			double common = 1;
+			for (String s : change.getFeatures()) {
+				if (trainSet.get(i).getFeatures().contains(s)) {
+					if (s.contains("AssignGroup") || s.contains("Coordinator")) {
+						common += 0.05;
+					} else if (s.startsWith("Gl")) {
+						common += 0.3;
+					} else {
+						common += 0.2;
+					}
+				}
+
+			}
+			d = d / common;
+			if (d < distances[length - 1]
+					&& !change.getID().equals(trainSet.get(i).getID())) {
+				if (d > distances[length - 2]) {
+					distances[length - 1] = d;
+					changes[length - 1] = trainSet.get(i);
+				} else {
+					int index = length - 2;
+					while (index > 0 && d < distances[index - 1]) {
+						--index;
+					}
+					for (int j = length - 1; j > index; --j) {
+						distances[j] = distances[j - 1];
+						changes[j] = changes[j - 1];
+					}
+					distances[index] = d;
+					changes[index] = trainSet.get(i);
+
+				}
+			}
+		}
+		return changes;
 	}
 }

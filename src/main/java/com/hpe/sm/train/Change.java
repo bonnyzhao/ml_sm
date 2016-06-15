@@ -8,6 +8,7 @@ public class Change implements Comparable<Change> {
 	private List<String> features;
 	private boolean result;
 	private String description;
+	private int amount;
 	
 
 	public Change(){
@@ -15,13 +16,15 @@ public class Change implements Comparable<Change> {
 		features = new ArrayList<String>();
 		result = false;
 		description = "";
+		amount = 0;
 	}
 	
-	public Change(String ID, List<String> features, boolean result, String description){
+	public Change(String ID, List<String> features, boolean result, String description, int amount){
 		this.ID = ID;
 		this.features = features;
 		this.result = result;
 		this.description = description;
+		this.amount = amount;
 	}
 	
 	public String getID() {
@@ -52,6 +55,14 @@ public class Change implements Comparable<Change> {
 		this.description = description;
 	}
 	
+	public int getAmount() {
+		return amount;
+	}
+
+	public void setAmount(int amount) {
+		this.amount = amount;
+	}
+
 	//@Override
 	public int compareTo(Change o) {
 		return this.ID.compareTo(o.getID());

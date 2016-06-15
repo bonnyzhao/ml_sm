@@ -62,12 +62,20 @@ public class Classification<T, K> {
     public Collection<T> getFeatureset() {
         return featureset;
     }
-
+    
     /**
      * Retrieves the classification's probability.
      * @return
      */
     public float getProbability() {
+        return this.probability;
+    }
+
+    /**
+     * Retrieves the classification's probability.
+     * @return
+     */
+    public float second() {
         return this.probability;
     }
 
