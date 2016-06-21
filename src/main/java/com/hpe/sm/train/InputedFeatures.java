@@ -1,5 +1,8 @@
 package com.hpe.sm.train;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class InputedFeatures {
 	String id = null;
 	String category = null;
@@ -11,6 +14,7 @@ public class InputedFeatures {
 	String logicalName = null;
 	String service = null;
 	String description = null;
+	
 	public InputedFeatures(String id, String category, String assignGroup,
 			String coordinator, String risk, String priority, String gl,
 			String logicalName, String service, String description) {
@@ -115,6 +119,34 @@ public class InputedFeatures {
 		return id + "\t" + category + "\t" + assignGroup + "\t" + coordinator + "\t" + risk
 				+ "\t" + priority + "\t" + gl + "\t" + logicalName + "\t" + service + "\t" + description;
 		
+	}
+	
+	public Change toChange(){
+		Change change = new Change();
+    	change.setID(id);
+    	change.setDescription(description);
+    	
+    	List<String> featureList = new ArrayList<String>();
+    	
+    	if(category != null && !category.equals("")) 
+    		featureList.add("Category " + category);
+		if(assignGroup != null && !assignGroup.equals("")) 
+			featureList.add("AssignGroup " + assignGroup);
+    	if(coordinator != null && !coordinator.equals("")) 
+    		featureList.add("Coordinator " + coordinator);
+    	if(risk != null && !risk.equals("")) 
+    		featureList.add("Risk " + risk);
+    	if(priority != null && !priority.equals(""))
+    		featureList.add("Priority " + priority);
+    	if(gl != null && !gl.equals("")) 
+    		featureList.add("Gl " + gl);
+    	if(logicalName != null && !logicalName.equals("")) 
+    		featureList.add("Logical " + logicalName);
+    	if(service != null && !service.equals("")) 
+    		featureList.add("Service " + service);
+    	
+    	change.setFeatures(featureList);
+    	return change;
 	}
 	
 }

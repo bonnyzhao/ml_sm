@@ -7,12 +7,12 @@ import com.aliasi.spell.JaccardDistance;
 import com.aliasi.tokenizer.NGramTokenizerFactory;
 import com.hpe.sm.train.Change;
 
-public class LingPipeTest {
+public class RiskEstimation {
 	private static String[] CATEGORIES = { "pos", "neg" };
 	private static int NGRAM_SIZE = 2;
 	private static DynamicLMClassifier classifier = DynamicLMClassifier.createNGramBoundary(CATEGORIES, NGRAM_SIZE);
 	
-	public LingPipeTest(){
+	public RiskEstimation(){
 		//DynamicLMClassifier classifier = DynamicLMClassifier.createNGramBoundary(CATEGORIES, NGRAM_SIZE);
 	}
 	
@@ -29,8 +29,13 @@ public class LingPipeTest {
 	}
 	
 	public static double test(Change change){
-		CharSequence sequence = change.getDescription().replaceAll("[^a-zA-Z0-9]", " ");
-		JointClassification result = classifier.classify(sequence);
+		return test(change.getDescription());
+		
+	}
+	
+	public static double test(String desc){
+		desc = desc.replaceAll("[^a-zA-Z0-9]", " ");
+		JointClassification result = classifier.classify(desc);
 		if(result.bestCategory().equals("neg")){
 			return result.conditionalProbability(0) * -1;
 		}
@@ -38,12 +43,12 @@ public class LingPipeTest {
 		
 	}
 	
-	public static double distance(Change change1, Change change2){
-		CharSequence sequence1 = change1.getDescription().replaceAll("[^a-zA-Z0-9]", " ");
-		CharSequence sequence2 = change2.getDescription().replaceAll("[^a-zA-Z0-9]", " ");
+	public static double distance(String desc1, String desc2){
+		desc1 = desc1.replaceAll("[^a-zA-Z0-9]", " ");
+		desc2 = desc2.replaceAll("[^a-zA-Z0-9]", " ");
 
 		JaccardDistance jd = new JaccardDistance(new NGramTokenizerFactory(1, 2));//bigram
-		double disDescription = jd.distance(sequence1, sequence2);
+		double disDescription = jd.distance(desc1, desc2);
 		return disDescription;
 		
 	}
